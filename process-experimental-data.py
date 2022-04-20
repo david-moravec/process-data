@@ -17,10 +17,11 @@ def getMeanForEachRow(df):
 
 def mean_confidence_interval_row(data, confidence=0.95):
     data = [float(i) for i in data]
-    x = data.pop(0)
     a = 1.0 * np.array(data)
+    a = a[~np.isnan(a)]
     n = len(a)
     m, se = np.mean(a), scipy.stats.sem(a)
+    print(a, m)
     h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
     return m, m-h, m+h
 
@@ -28,7 +29,6 @@ def appendMeanAndCI(df):
     mean_CI_rows = getMeanForEachRow(df)
     mean_CI_rows = [ele for ele in mean_CI_rows if ele != []]
     df_b = pd.DataFrame(mean_CI_rows, index=df.index, columns=['mean', 'mean-h', 'mean+h'])
-    df['x'].astype(float)
     df = df.join(df_b)
     #print(df.head())
     #df = pd.concat(df, dfTemp, on='x')
@@ -40,6 +40,7 @@ def appendMeanAndCI(df):
 class DataSetProcessor:
     def __init__(self, data_sets):
         self.sorted_data = {}
+        self.datatowrite = {}
         self.all_data = ()
         self.keys = ()
         self.data_sets = data_sets
@@ -59,13 +60,15 @@ class DataSetProcessor:
                 entries_no = int(self.f.readline())
                 data = self.readLinesIntoList(self.f, entries_no)
                 df_b = pd.DataFrame(data, columns=['x', data_set])
+                df_b = df_b.set_index('x')
                 ### need to make sure we are not merging none with dataframe, so if theres is no 
                 #existing dataframe we need to create one before merging
                 try:
                     #print(self.sorted_data[keyword].head())
                     #print(df_b.head())
                     #print(pd.merge(self.sorted_data[keyword], df_b, on="x").head())
-                    self.sorted_data[keyword][data_set] = df_b[data_set]
+                    df_a = self.sorted_data[keyword]
+                    self.sorted_data[keyword] = df_a.join(df_b)
                     #self.sorted_data[keyword] = df_a.join(df_b, on="x", lsuffix='_')
                     #print(self.sorted_data[keyword].head())
                 except KeyError:
@@ -86,9 +89,11 @@ class DataSetProcessor:
 
     def writeSortedDataSets(self):
         for key in self.sorted_data:
+            df = self.sorted_data[key]
             file_name = os.path.join(key + ".dat")
             file_path = os.path.join(self.dir_name, file_name)
-            self.sorted_data[key].to_csv(file_path, sep=' ', index=False, header=False)
+            dummy_df = df.iloc[:,-1]
+            dummy_df.to_csv(file_path, sep=' ', index=True, header=False)
 
     def createAndWriteDict(self, data_set):
         self.sortDataSetsIntoDict(data_set)
@@ -120,6 +125,6 @@ for key in d.sorted_data.keys():
     df = d.sorted_data[key]
     df = appendMeanAndCI(df)
     filename =os.path.join("mean_CI_data", key + ".dat")
-    df.to_csv(filename, columns=['x', 'mean', 'mean-h', 'mean+h'], sep=' ', index=False, header=False)
+    df.to_csv(filename, columns=['mean', 'mean-h', 'mean+h'], sep=' ', index=True, header=False)
 
 
