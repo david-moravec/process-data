@@ -21,7 +21,6 @@ def mean_confidence_interval_row(data, confidence=0.95):
     a = a[~np.isnan(a)]
     n = len(a)
     m, se = np.mean(a), scipy.stats.sem(a)
-    print(a, m)
     h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
     return m, m-h, m+h
 
@@ -61,6 +60,10 @@ class DataSetProcessor:
                 data = self.readLinesIntoList(self.f, entries_no)
                 df_b = pd.DataFrame(data, columns=['x', data_set])
                 df_b = df_b.set_index('x')
+                if df_b.index.has_duplicates:
+                    print(keyword)
+                    df_b = df_b.groupby(['x']).mean()
+                    print(df_b.head())
                 ### need to make sure we are not merging none with dataframe, so if theres is no 
                 #existing dataframe we need to create one before merging
                 try:
