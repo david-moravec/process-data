@@ -7,7 +7,7 @@ if len(sys.argv) == 1:
     quit()
 
 for name in sys.argv[1:]:
-    df = pd.read_csv(name, sep=' ',usecols=[0, 3], names=['x', 'quantity'])
+    df = pd.read_csv(name, sep=' ',usecols=[0, 3], names=['x', 'quantity'], comment='#')
     mean = df.groupby(['x'])['x', 'quantity'].mean()
     mean.reset_index(drop=True)
     mean.to_csv("../" + name + "-mean.dat", sep=' ', index=False, header=False)
